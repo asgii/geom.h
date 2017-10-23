@@ -280,54 +280,81 @@ geom_vec3 rotate_qxq(const geom_quat p, const geom_vec3 q)
 
 geom_mat3 mul_9x9(const geom_mat3 p, const geom_mat3 q)
 {
-   return {.d = {p.d[0] * q.d[0] +
-		 p.d[3] * q.d[1] +
-		 p.d[6] * q.d[2],
-		 p.d[1] * q.d[0] +
-		 p.d[4] * q.d[1] +
-		 p.d[7] * q.d[2],
-		 p.d[2] * q.d[0] +
-		 p.d[5] * q.d[1] +
-		 p.d[8] * q.d[2],
-		 p.d[0] * q.d[3] + //
-		 p.d[3] * q.d[4] +
-		 p.d[6] * q.d[5],
-		 p.d[1] * q.d[3] +
-		 p.d[4] * q.d[4] +
-		 p.d[7] * q.d[5],
-		 p.d[2] * q.d[3] +
-		 p.d[5] * q.d[4] +
-		 p.d[8] * q.d[5],
-		 p.d[0] * q.d[6] + //
-		 p.d[3] * q.d[7] +
-		 p.d[6] * q.d[8],
-		 p.d[1] * q.d[6] +
-		 p.d[4] * q.d[7] +
-		 p.d[7] * q.d[8],
-		 p.d[2] * q.d[6] +
-		 p.d[5] * q.d[7] +
+   //This is clearer if you don't double it up as I have
+   return {.d = {p.d[0] * q.d[0] + p.d[3] * q.d[1] +
+		 p.d[6] * q.d[2], p.d[1] * q.d[0] +
+		 p.d[4] * q.d[1] + p.d[7] * q.d[2],
+		 p.d[2] * q.d[0] + p.d[5] * q.d[1] +
+		 p.d[8] * q.d[2], p.d[0] * q.d[3] + //
+		 p.d[3] * q.d[4] + p.d[6] * q.d[5],
+		 p.d[1] * q.d[3] + p.d[4] * q.d[4] +
+		 p.d[7] * q.d[5], p.d[2] * q.d[3] +
+		 p.d[5] * q.d[4] + p.d[8] * q.d[5],
+		 p.d[0] * q.d[6] + p.d[3] * q.d[7] + //
+		 p.d[6] * q.d[8], p.d[1] * q.d[6] +
+		 p.d[4] * q.d[7] + p.d[7] * q.d[8],
+		 p.d[2] * q.d[6] + p.d[5] * q.d[7] +
 		 p.d[8] * q.d[8]}};
 }
 
 geom_vec3 mul_9x3(const geom_mat3 p, const geom_vec3 q)
 {
    //Just the first row of mul_9x9.
-   return {.d = {p.d[0] * q.d[0] +
-		 p.d[3] * q.d[1] +
-		 p.d[6] * q.d[2],
-		 p.d[1] * q.d[0] +
-		 p.d[4] * q.d[1] +
-		 p.d[7] * q.d[2],
-		 p.d[2] * q.d[0] +
-		 p.d[5] * q.d[1] +
+   return {.d = {p.d[0] * q.d[0] + p.d[3] * q.d[1] +
+		 p.d[6] * q.d[2], p.d[1] * q.d[0] +
+		 p.d[4] * q.d[1] + p.d[7] * q.d[2],
+		 p.d[2] * q.d[0] + p.d[5] * q.d[1] +
 		 p.d[8] * q.d[2]}};
 }
 
-#if 0
-geom_mat4 mul_16x16(const geom_mat4 p, const geom_mat4 q);
-geom_vec4 mul_16x4(const geom_mat4 p, const geom_vec4 q);
-geom_vec3 mul_16x3(const geom_mat4 p, const geom_vec3 q); //iffy
-#endif
+geom_mat4 mul_16x16(const geom_mat4 p, const geom_mat4 q)
+{
+   return {.d = {p.d[0] * q.d[0] + p.d[4] * q.d[1] +
+		 p.d[8] * q.d[2] + p.d[12] * q.d[3],
+		 p.d[1] * q.d[0] + p.d[5] * q.d[1] +
+		 p.d[9] * q.d[2] + p.d[13] * q.d[3],
+		 p.d[2] * q.d[0] + p.d[6] * q.d[1] +
+		 p.d[10] * q.d[2] + p.d[14] * q.d[3],
+		 p.d[3] * q.d[0] + p.d[7] * q.d[1] +
+		 p.d[11] * q.d[2] + p.d[15] * q.d[3],
+		 p.d[0] * q.d[4] +  p.d[4] * q.d[5] + //
+		 p.d[8] * q.d[6] + p.d[12] * q.d[7],
+		 p.d[1] * q.d[4] + p.d[5] * q.d[5] +
+		 p.d[9] * q.d[6] + p.d[13] * q.d[7],
+		 p.d[2] * q.d[4] + p.d[6] * q.d[5] +
+		 p.d[10] * q.d[6] + p.d[14] * q.d[7],
+		 p.d[3] * q.d[4] + p.d[7] * q.d[5] +
+		 p.d[11] * q.d[6] + p.d[15] * q.d[7],
+		 p.d[0] * q.d[8] + p.d[4] * q.d[9] + //
+		 p.d[8] * q.d[10] + p.d[12] * q.d[11],
+		 p.d[1] * q.d[8] + p.d[5] * q.d[9] +
+		 p.d[9] * q.d[10] + p.d[13] * q.d[11],
+		 p.d[2] * q.d[8] + p.d[6] * q.d[9] +
+		 p.d[10] * q.d[10] + p.d[14] * q.d[11],
+		 p.d[3] * q.d[8] + p.d[7] * q.d[9] +
+		 p.d[11] * q.d[10] + p.d[15] * q.d[11],
+		 p.d[0] * q.d[12] + p.d[4] * q.d[13] + //
+		 p.d[8] * q.d[14] + p.d[12] * q.d[15],
+		 p.d[1] * q.d[12] + p.d[5] * q.d[13] +
+		 p.d[9] * q.d[14] + p.d[13] * q.d[15],
+		 p.d[2] * q.d[12] + p.d[6] * q.d[13] +
+		 p.d[10] * q.d[14] + p.d[14] * q.d[15],
+		 p.d[3] * q.d[12] + p.d[7] * q.d[13] +
+		 p.d[11] * q.d[14] + p.d[15] * q.d[15]}};
+}
+
+geom_vec4 mul_16x4(const geom_mat4 p, const geom_vec4 q)
+{
+   //Again, just the first row of mul_16x16.
+   return {.d = {p.d[0] * q.d[0] + p.d[4] * q.d[1] +
+		 p.d[8] * q.d[2] + p.d[12] * q.d[3],
+		 p.d[1] * q.d[0] + p.d[5] * q.d[1] +
+		 p.d[9] * q.d[2] + p.d[13] * q.d[3],
+		 p.d[2] * q.d[0] + p.d[6] * q.d[1] +
+		 p.d[10] * q.d[2] + p.d[14] * q.d[3],
+		 p.d[3] * q.d[0] + p.d[7] * q.d[1] +
+		 p.d[11] * q.d[2] + p.d[15] * q.d[3]}};
+}
 
 #ifdef GEOM_CPP
 } //extern "C"
@@ -336,10 +363,12 @@ geom_vec3 mul_16x3(const geom_mat4 p, const geom_vec3 q); //iffy
 #ifdef GEOM_CPP
 namespace geom
 {
-//TODO class vec2
+//TODO class vec2, class quat
 
 class vec3;
+class vec4;
 class mat3;
+class mat4;
 
 class vec3
 {
@@ -374,8 +403,35 @@ public:
 
    bool isUnit(float epsilon = 0.01) const { return is_unit_3(vec, epsilon); }
 
-   float dot(const vec3 p, const vec3 q) { return dot_3x3(p.vec, q.vec); }
-   vec3 cross(const vec3 p, const vec3 q) { return vec3(cross_3x3(p.vec, q.vec)); }
+   friend float dot(const vec3 p, const vec3 q) { return dot_3x3(p.vec, q.vec); }
+   friend vec3 cross(const vec3 p, const vec3 q) { return vec3(cross_3x3(p.vec, q.vec)); }
+};
+
+class vec4
+//vec4s are not very useful except in formatting for uploads. I've
+//left them barebones to discourage their use.
+{
+private:
+   geom_vec4 vec;
+
+   vec4 (geom_vec4 xyzw) : vec (xyzw) {}
+
+public:
+
+   vec4 (float x, float y, float z, float w)
+      : vec ({.d = {x, y, z, w}}) {}
+
+   const float& operator[] (const size_t ind) const
+   {
+      return vec.d[ind];
+   }
+
+   float& operator[] (const size_t ind)
+   {
+      return vec.d[ind];
+   }
+   
+   friend vec4 operator* (const mat4 p, const vec4 q);
 };
 
 class mat3
@@ -413,6 +469,8 @@ class mat4
 private:
    geom_mat4 mat;
 
+   mat4 (geom_mat4 abcd) : mat(abcd) {}
+
 public:
    mat4 (float a, float b, float c, float d,
 	 float e, float f, float g, float h,
@@ -426,7 +484,12 @@ public:
    }
 
    float& operator[] (const size_t ind) { return mat.d[ind]; }
+
+   mat4 operator* (const mat4 q) { return mat4(mul_16x16(mat, q.mat)); }
+   friend vec4 operator* (const mat4 p, const vec4 q);
 };
+
+vec4 operator* (const mat4 p, const vec4 q) { return vec4(mul_16x4(p.mat, q.vec)); }
 
 }
 #endif
