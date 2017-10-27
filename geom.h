@@ -1,7 +1,13 @@
 #pragma once
 
+//include cmath?
+
 #ifdef GEOM_CPP
 #include <stdexcept>
+#include <cmath> //for fmod
+//TODO remove
+#include <iostream>
+   using namespace std;
 #endif
 
 #define GEOM_PI 3.14159265358979323846
@@ -15,16 +21,13 @@ typedef struct geom_quat { float d[4]; } geom_quat;
 typedef struct geom_aa { float d[4]; } geom_aa;
 
 #ifdef GEOM_CPP
-extern "C" {
-#endif
-
-#ifdef GEOM_CPP
 //inline
 #endif
 //float dot(const geom_vec3 p, const geom_vec3 q);
 
-//TODO cpp overloading
-//TODO geom_ prefix on everything? except cpp overloads?
+#ifdef GEOM_CPP
+extern "C" {
+#endif
 
 //...
 
@@ -203,7 +206,7 @@ geom_quat inverse_q(const geom_quat p)
    }
 }
 
-geom_quat quat(const geom_aa p)
+geom_quat make_q(const geom_aa p)
 {
    float angle = p.d[3];
    geom_vec3 axis = {.d = {p.d[0], p.d[1], p.d[2]}};
@@ -227,29 +230,44 @@ geom_quat quat(const geom_aa p)
 
 geom_quat mul_qxq(const geom_quat p, const geom_quat q)
 {
-   //If either involves an angle of 0, it doesn't involve any rotation.
+#if 0
+   //'Hamiltonian' multiplication
+   return {.d =
+	 {p.d[3] * q.d[0] + p.d[0] * q.d[3] + p.d[1] * q.d[2] - p.d[2] * q.d[1],
+	  p.d[3] * q.d[1] - p.d[0] * q.d[2] + p.d[1] * q.d[3] + p.d[2] * q.d[0],
+	  p.d[3] * q.d[2] + p.d[0] * q.d[1] - p.d[1] * q.d[0] + p.d[2] * q.d[3],
+	  //w
+	  p.d[3] * q.d[3] - p.d[0] * q.d[0] - p.d[1] * q.d[1] - p.d[2] * q.d[2]}};
+#endif
 
-   if (p.d[3] == 0.f) { return q; }
-
-   else if (q.d[3] == 0.f) { return p; }
-
-   const geom_vec3 pvec = {.d = {p.d[0], p.d[1], p.d[2]}};
-   const geom_vec3 qvec = {.d = {q.d[0], q.d[1], q.d[2]}};
-
-   geom_vec3 vec = add_3x3(cross_3x3(pvec, qvec),
-			   add_3x3(mul_3x1(pvec, q.d[3]),
-				   mul_3x1(qvec, p.d[3])));
+   /*
+     Note w = 4-place dot; xyz = p.d[3] * q.xyz (the left-hand column
+     of mults) + q.d[3] * p.xyz (the q.d[3] mults which shift place) +
+     cross(p.xyz, q.xyz) (the pairs of subs)...!
    
-   float w = p.d[3] * q.d[3] - dot_3x3(pvec, qvec);
+     So things are simplified by checking if either [3] is 0.
+   */
 
-   //NB unit quaternions' product should itself be a unit quaternion.
-   //I don't think there's any advantage in checking, though (how
-   //would you know whether the inputs were meant to be unit-length?)
-   //Rather, the user should check the inputs beforehand.
-   return {vec.d[0], vec.d[1], vec.d[2], w};
+   geom_vec3 pxyz = {p.d[0], p.d[1], p.d[2]};
+   geom_vec3 qxyz = {q.d[0], q.d[1], q.d[2]};
+
+   geom_vec3 xyz = cross_3x3(pxyz, qxyz);
+
+   //?: can't initialise
+   geom_vec3 zero = {.d = {0.f, 0.f, 0.f}};
+
+   geom_vec3 pxyzw = p.d[3] ? mul_3x1(qxyz, p.d[3]) : zero;
+   geom_vec3 qxyzw = q.d[3] ? mul_3x1(pxyz, q.d[3]) : zero;
+
+   xyz = add_3x3(xyz, add_3x3(pxyzw, qxyzw));
+
+   float w = p.d[3] * q.d[3] - dot_3x3(pxyz, qxyz);
+
+   return {.d = {xyz.d[0], xyz.d[1], xyz.d[2], w}};
 }
 
-geom_vec3 rotate_qxq(const geom_quat p, const geom_vec3 q)
+#if 0
+geom_vec3 rotate_qx3(const geom_quat p, const geom_vec3 q)
 {
    //p * q * conjugate(p)
    //conjugate(p) = -p.d[0], -p.d[1], -p.d[2], p.d[3]
@@ -257,9 +275,11 @@ geom_vec3 rotate_qxq(const geom_quat p, const geom_vec3 q)
    //For convenience in writing the below mul.
    geom_vec3 psq = {p.d[0] * p.d[0], p.d[1] * p.d[1], p.d[2] * p.d[2]};
 
-   //This is just a simplified subset of mul_9x3.
-
    geom_vec3 res;
+
+   //I believe this is based on matrix multiplication of the matrix
+   //gotten from the quaternion. Possibly meant to be an optimisation
+   //based on number of ops; yet to check.
 
    res.d[0] = (q.d[0] * (0.5 - psq.d[1] - psq.d[2]) +
 	       q.d[1] * (p.d[0] * p.d[1] - p.d[3] * p.d[2]) +
@@ -276,6 +296,28 @@ geom_vec3 rotate_qxq(const geom_quat p, const geom_vec3 q)
    res = mul_3x1(res, 2.f);
 
    return res;
+}
+#endif
+
+geom_vec3 rotate_qx3(const geom_quat p, const geom_vec3 q)
+{
+   //= quat * vec * quat.conjugate
+
+   geom_quat conj = conjugate_q(p);
+
+   //Simplifying first (right hand) mult because vec.w = 0
+
+   geom_quat first = {.d =
+		      {q.d[0] * conj.d[3] + q.d[1] * conj.d[2] - q.d[2] * conj.d[1],
+		       -q.d[0] * conj.d[2] + q.d[1] * conj.d[3] + q.d[2] * conj.d[0],
+		       q.d[0] * conj.d[1] - q.d[1] * conj.d[0] + q.d[2] * conj.d[3],
+		       -q.d[0] * conj.d[0] - q.d[1] * conj.d[1] + q.d[2] * conj.d[2]}};
+   
+   //Note: first[.xyz] = cross(q, conj) + q * conj[3] (the diagonal).
+   
+   geom_quat result = mul_qxq(p, first);
+
+   return {.d = {result.d[0], result.d[1], result.d[2]}};
 }
 
 geom_mat3 mul_9x9(const geom_mat3 p, const geom_mat3 q)
@@ -363,12 +405,14 @@ geom_vec4 mul_16x4(const geom_mat4 p, const geom_vec4 q)
 #ifdef GEOM_CPP
 namespace geom
 {
-//TODO class vec2, class quat
+//TODO class vec2
 
 class vec3;
 class vec4;
 class mat3;
 class mat4;
+class quaternion;
+class axisAngle;
 
 class vec3
 {
@@ -490,6 +534,49 @@ public:
 };
 
 vec4 operator* (const mat4 p, const vec4 q) { return vec4(mul_16x4(p.mat, q.vec)); }
+
+class axisAngle
+{
+private:
+   geom_aa aa;
+   
+public:
+   axisAngle(const vec3 ax, const float ang) : aa ({ax[0], ax[1], ax[2], ang}) {}
+
+   vec3 axis() const { return vec3(aa.d[0], aa.d[1], aa.d[2]); }
+   float angle() const { return aa.d[3]; }
+
+   //TODO axisAngle(quaternion)? For debugging etc.
+};
+
+class quaternion
+{
+private:
+   geom_quat qu;
+
+   quaternion(const geom_quat q) : qu (q) {}
+   
+public:
+   quaternion (const axisAngle aa) : qu (make_q({aa.axis()[0], aa.axis()[1], aa.axis()[2], aa.angle()})) {}
+
+   quaternion operator* (const quaternion q) const { return quaternion(mul_qxq(qu, q.qu)); }
+   
+   //Assumes this quaternion is unit-sized.
+   vec3 rotate(const vec3 q) const
+   {
+      geom_vec3 result = rotate_qx3(qu, {q[0], q[1], q[2]});
+      
+      return vec3(result.d[0], result.d[1], result.d[2]);
+   }
+      
+   bool isUnit(float epsilon) const { return is_unit_q(qu, epsilon); }
+   quaternion norm() const { return quaternion(norm_q(qu)); }
+   float len() const { return len_q(qu); }
+   quaternion inverse() const { return quaternion(inverse_q(qu)); }
+   quaternion conjugate() const { return quaternion(conjugate_q(qu)); }
+
+   //TODO getMatrix?
+};
 
 }
 #endif
