@@ -1,12 +1,17 @@
 #pragma once
 
-#include <cmath> //for fmod
-
 #define GEOM_PI 3.14159265358979323846
 
 #ifdef GEOM_CPP
 extern "C" {
 #endif
+
+/*
+  What follows is implementation-free. Define GEOM_IMPL in one of the
+  files that includes geom.h so that the implementation, below, can be
+  linked. Doing so in multiple files will lead to conflicts from
+  redeclaration.
+*/
 
 //Vectors
 typedef struct geom_vec2 { float d[2]; } geom_vec2;
