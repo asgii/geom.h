@@ -2,8 +2,14 @@
 
 #define GEOM_PI 3.14159265358979323846
 
+#ifndef GEOM_CPP
+#include <tgmath.h>
+#endif
+
 #ifdef GEOM_CPP
 extern "C" {
+
+#include <cmath> 
 #endif
 
 /*
