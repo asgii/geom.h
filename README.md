@@ -8,11 +8,21 @@ The advantage of geom.h, though, is that it is not heavily templated like GLM, a
 
 ## Use
 
-geom.h is just the one header; all you need to do is `#include` it.
+geom.h is just the one header. All you need to do is:
+`#include "geom.h"` for C files that need it
 
-In one of the files that includes geom.h, you will also need to `#define GEOM_IMPL`. This will include the implementation of functions. This shouldn't be done in more than one file, since it will lead to linker errors from redefinition of functions.
+```
+#define GEOM_CPP
+#include "geom.h"
+``` for files that use the C++ API
 
-geom.h should work for both C and C++. To use the C++ API (the classes geom::vec3, geom::vec4, etc.), you need to `#define GEOM_CPP`.
+```
+#define GEOM_IMPL
+#include "geom.h"
+#undef GEOM_IMPL
+``` from ONE file exactly (again, with the extra `#define GEOM_CPP` if you use the C++ API)
+
+To compile C, you will need the flags `-std=c99` and `-lm`.
 
 ## Conventions
 
@@ -26,5 +36,5 @@ c .  .
 
 This is the same convention OpenGL uses for its matrices.
 
-Quaternions are stored <x, y, z, w>, with the real part last.
+Quaternions are stored <x, y, z, w>, i.e., the three imaginary parts first, the real part last.
 'axisAngle's, geom_aa or geom::axisAngle, are just an axis and an angle, stored consecutively in that order.
