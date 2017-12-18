@@ -14,13 +14,15 @@ geom.h is just the one header. All you need to do is:
 ```
 #define GEOM_CPP
 #include "geom.h"
-``` for files that use the C++ API
+``` 
+for files that use the C++ API
 
 ```
 #define GEOM_IMPL
 #include "geom.h"
 #undef GEOM_IMPL
-``` from ONE file exactly (again, with the extra `#define GEOM_CPP` if you use the C++ API)
+``` 
+from ONE file exactly (again, with the extra `#define GEOM_CPP` if you use the C++ API)
 
 To compile C, you will need the flags `-std=c99` and `-lm`.
 
