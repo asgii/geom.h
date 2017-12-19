@@ -29,6 +29,10 @@ extern "C" {
     //Axis and angle (in that order)
     typedef struct geom_aa { float d[4]; } geom_aa;
     
+    extern geom_mat3 identity_mat3();
+    extern geom_mat4 identity_mat4();
+    extern geom_quat identity_q();
+    
     //Convert degrees to radians
     extern float radians(float degr);
     
@@ -62,9 +66,10 @@ extern "C" {
     
     //Quaternion constructor
     extern geom_quat make_q(const geom_aa p);
-    
-    //Quaternion identity - representing no rotation whatsoever
-    extern geom_quat identity_q();
+    //Quaternion -> rotation matrix
+    //(no extra information in the mat4 version)
+    extern geom_mat3 make_mat3(const geom_quat p);
+    extern geom_mat4 make_mat4(const geom_quat p);
     
     //Vector operations as above, for quaternions
     extern float len_q(const geom_quat p);
@@ -239,7 +244,8 @@ namespace geom
         quaternion inverse() const;
         quaternion conjugate() const;
         
-        //TODO getMatrix?
+        mat3 getMat3() const;
+        mat4 getMat4() const;
     };
     
 } //namespace
@@ -265,6 +271,23 @@ namespace geom
 #ifdef GEOM_CPP
 extern "C" {
 #endif
+    
+    extern geom_mat3 identity_mat3()
+    {
+        return (geom_mat3) {.d = {
+                1.f, 0.f, 0.f,
+                0.f, 1.f, 0.f,
+                0.f, 0.f, 1.f}};
+    }
+    
+    extern geom_mat4 identity_mat4()
+    {
+        return (geom_mat4) {.d = {
+                1.f, 0.f, 0.f, 0.f, 
+                0.f, 1.f, 0.f, 0.f,
+                0.f, 0.f, 1.f, 0.f,
+                0.f, 0.f, 0.f, 1.f}};
+    }
     
     extern float radians(float degr)
     {
@@ -468,6 +491,55 @@ extern "C" {
         return quat;
     }
     
+    extern geom_mat3 make_mat3(const geom_quat p)
+    {
+        //TODO? would be better with a margin
+        //but how can I know what margin's significant?
+        //another function where it's specified?
+        if (p.d[3] == 0.f)
+        {
+            return identity_mat3();
+        }
+        
+        geom_mat3 result;
+        
+        return (geom_mat3) {.d = {
+                1 - 2 * (p.d[1] * p.d[1] + p.d[2] * p.d[2]),
+                2 * (p.d[0] * p.d[1] + p.d[2] * p.d[3]),
+                2 * (p.d[0] * p.d[2] - p.d[1] * p.d[3]),
+                
+                2 * (p.d[0] * p.d[1] - p.d[2] * p.d[3]),
+                1 - 2 * (p.d[0] * p.d[0] + p.d[2] * p.d[2]),
+                2 * (p.d[1] * p.d[2] + p.d[0] * p.d[3]),
+                
+                2 * (p.d[0] * p.d[2] + p.d[1] * p.d[3]),
+                2 * (p.d[1] * p.d[2] - p.d[0] * p.d[3]),
+                1 - 2 * (p.d[0] * p.d[0] * p.d[1] * p.d[1])
+            }
+        };
+        
+        /*
+Notes for SIMD:
+6 of 9 elements are added/subbed and then multiplied by 2 in simplified 
+notation, when they could have shared elements multiplied by 2 only once.
+e.g., 2xy is used for 2 elements, 2(xy-wz) and 2(xy+wz). Do all the 2s 
+beforehand, then subtract or add.
+*/
+    }
+    
+    extern geom_mat4 make_mat4(const geom_quat p)
+    {
+        geom_mat3 mat = make_mat3(p);
+        
+        return (geom_mat4) {.d = {
+                mat.d[0], mat.d[1], mat.d[2], 0.f,
+                mat.d[3], mat.d[4], mat.d[5], 0.f,
+                mat.d[6], mat.d[7], mat.d[8], 0.f,
+                0.f, 0.f, 0.f, 1.f
+            }
+        };
+    }
+    
     extern geom_quat mul_qxq(const geom_quat p, const geom_quat q)
     {
 #if 0
@@ -663,6 +735,7 @@ namespace geom {
     
     //mat3
     
+    mat3::mat3 () : mat (identity_mat3()) {}
     mat3::mat3 (geom_mat3 abc) : mat (abc) {}
     mat3::mat3 (float a, float b, float c,
                 float d, float e, float f,
@@ -678,6 +751,7 @@ namespace geom {
     
     //mat4
     
+    mat4::mat () : mat (identity_mat4()) {}
     mat4::mat4 (geom_mat4 abcd) : mat(abcd) {}
     mat4::mat4 (float a, float b, float c, float d,
                 float e, float f, float g, float h,
@@ -723,6 +797,9 @@ namespace geom {
     float quaternion::len() const { return len_q(qu); }
     quaternion quaternion::inverse() const { return quaternion(inverse_q(qu)); }
     quaternion quaternion::conjugate() const { return quaternion(conjugate_q(qu)); }
+    
+    mat3 quaternion::getMat3() const { return (mat3) make_mat3(qu); }
+    mat4 quaternion::getMat4() const { return (mat4) make_mat4(qu); }
     
 } //namespace
 #endif //GEOM_CPP
