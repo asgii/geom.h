@@ -63,6 +63,9 @@ extern "C" {
     //Quaternion constructor
     extern geom_quat make_q(const geom_aa p);
     
+    //Quaternion identity - representing no rotation whatsoever
+    extern geom_quat identity_q();
+    
     //Vector operations as above, for quaternions
     extern float len_q(const geom_quat p);
     extern geom_quat norm_q(const geom_quat p);
@@ -222,6 +225,7 @@ namespace geom
         quaternion(const geom_quat q);
         
         public:
+        quaternion (); //identity - no rotation
         quaternion (const axisAngle aa);
         
         quaternion operator* (const quaternion q) const;
@@ -370,6 +374,11 @@ extern "C" {
                      p.d[0] * p.d[0] +
                      p.d[1] * p.d[1] +
                      p.d[2] * p.d[2]);
+    }
+    
+    extern geom_quat identity_q()
+    {
+        return (geom_quat) {.d = {0, 0, 1, 0}};
     }
     
     extern geom_quat norm_q(const geom_quat p)
@@ -694,6 +703,7 @@ namespace geom {
     //quaternion
     
     quaternion::quaternion(const geom_quat q) : qu (q) {}
+    quaternion::quaternion() : qu (identity_q()) {}
     
     quaternion::quaternion (const axisAngle aa)
         : qu (make_q({aa.axis()[0], aa.axis()[1], aa.axis()[2], aa.angle()})) {}
