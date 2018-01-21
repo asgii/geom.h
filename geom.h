@@ -36,6 +36,10 @@ extern "C" {
     //Convert degrees to radians
     extern float radians(float degr);
     
+    //Booleans (currently just for trivial comparisons - no margin of error)
+    extern int eq_2x2(const geom_vec2 p, const geom_vec2 q);
+    extern int eq_3x3(const geom_vec3 p, const geom_vec3 q);
+    
     //Dot-product
     extern float dot_3x3(const geom_vec3 p, const geom_vec3 q);
     extern float dot_2x2(const geom_vec2 p, const geom_vec2 q);
@@ -294,6 +298,22 @@ extern "C" {
         return degr * 180.f / GEOM_PI;
     }
     
+    //Temporary - would be better with an optional margin
+    extern int eq_2x2(const geom_vec2 p, const geom_vec2 q)
+    {
+        return (
+            (p.d[0] == q.d[0]) &&
+            (p.d[1] == q.d[1]));
+    }
+    
+    extern int eq_3x3(const geom_vec3 p, const geom_vec3 q)
+    {
+        return (
+            (p.d[0] == q.d[0]) &&
+            (p.d[1] == q.d[1]) &&
+            (p.d[2] == q.d[2]));
+    }
+    
     extern float dot_3x3(const geom_vec3 p, const geom_vec3 q)
     {
         return p.d[0] * q.d[0] +
@@ -401,7 +421,8 @@ extern "C" {
     
     extern geom_quat identity_q()
     {
-        return (geom_quat) {.d = {0, 0, 1, 0}};
+        //This is already normalised, since sqrt(1) = 1
+        return (geom_quat) {.d = {0.f, 0.f, 0.f, 1.f}};
     }
     
     extern geom_quat norm_q(const geom_quat p)
@@ -493,30 +514,21 @@ extern "C" {
     
     extern geom_mat3 make_mat3(const geom_quat p)
     {
-        //TODO? would be better with a margin
-        //but how can I know what margin's significant?
-        //another function where it's specified?
-        if (p.d[3] == 0.f)
-        {
-            return identity_mat3();
-        }
-        
-        geom_mat3 result;
-        
-        return (geom_mat3) {.d = {
-                1 - 2 * (p.d[1] * p.d[1] + p.d[2] * p.d[2]),
-                2 * (p.d[0] * p.d[1] + p.d[2] * p.d[3]),
-                2 * (p.d[0] * p.d[2] - p.d[1] * p.d[3]),
+        geom_mat3 result = (geom_mat3) {.d = {
+                1.f - 2.f * (p.d[1] * p.d[1] + p.d[2] * p.d[2]),
+                2.f * (p.d[0] * p.d[1] + p.d[2] * p.d[3]),
+                2.f * (p.d[0] * p.d[2] - p.d[1] * p.d[3]),
                 
-                2 * (p.d[0] * p.d[1] - p.d[2] * p.d[3]),
-                1 - 2 * (p.d[0] * p.d[0] + p.d[2] * p.d[2]),
-                2 * (p.d[1] * p.d[2] + p.d[0] * p.d[3]),
+                2.f * (p.d[0] * p.d[1] - p.d[2] * p.d[3]),
+                1.f - 2.f * (p.d[0] * p.d[0] + p.d[2] * p.d[2]),
+                2.f * (p.d[1] * p.d[2] + p.d[0] * p.d[3]),
                 
-                2 * (p.d[0] * p.d[2] + p.d[1] * p.d[3]),
-                2 * (p.d[1] * p.d[2] - p.d[0] * p.d[3]),
-                1 - 2 * (p.d[0] * p.d[0] * p.d[1] * p.d[1])
-            }
-        };
+                2.f * (p.d[0] * p.d[2] + p.d[1] * p.d[3]),
+                2.f * (p.d[1] * p.d[2] - p.d[0] * p.d[3]),
+                1.f - 2.f * (p.d[0] * p.d[0] + p.d[1] * p.d[1])
+            }};
+            
+        return result;
         
         /*
 Notes for SIMD:
@@ -558,7 +570,6 @@ beforehand, then subtract or add.
           
           So things are simplified by checking if either [3] is 0.
         */
-        
         geom_vec3 pxyz = (geom_vec3) {p.d[0], p.d[1], p.d[2]};
         geom_vec3 qxyz = (geom_vec3) {q.d[0], q.d[1], q.d[2]};
         
@@ -567,8 +578,8 @@ beforehand, then subtract or add.
         //?: can't initialise
         geom_vec3 zero = (geom_vec3) {.d = {0.f, 0.f, 0.f}};
         
-        geom_vec3 pxyzw = p.d[3] ? mul_3x1(qxyz, p.d[3]) : zero;
-        geom_vec3 qxyzw = q.d[3] ? mul_3x1(pxyz, q.d[3]) : zero;
+        geom_vec3 pxyzw = fabs(p.d[3]) ? mul_3x1(qxyz, p.d[3]) : zero;
+        geom_vec3 qxyzw = fabs(q.d[3]) ? mul_3x1(pxyz, q.d[3]) : zero;
         
         xyz = add_3x3(xyz, add_3x3(pxyzw, qxyzw));
         
